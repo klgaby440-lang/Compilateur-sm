@@ -3,7 +3,6 @@ name: ClassNet Production Build
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]
 
 jobs:
   build-windows-ecosystem:
@@ -23,19 +22,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r intranet-server/requirements.txt
-          pip install nuitka zstandard
 
-      - name: ⚡ Compiler le serveur Intranet en binaire autonome (Nuitka)
+      - name: ⚡ Compiler le serveur Intranet avec Nuitka
         run: |
           cd intranet-server
-          python -m nuitka --standalone --mingw64 --enable-plugin=anti-bloat --output-dir=dist server_intranet.py
+          python -m nuitka --standalone --mingw64 --include-package=fastapi --include-package=uvicorn --include-package=pydantic --output-dir=dist_nuitka server_intranet.py
 
-      - name: 🟢 Installer Node.js & pnpm
+      - name: 🟢 Installer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: classnet-p/package-lock.json
 
       - name: 💻 Compiler ClassNet P (Tauri)
         uses: tauri-apps/tauri-action@v0
@@ -45,7 +41,16 @@ jobs:
           projectPath: classnet-p
           configPath: src-tauri/tauri.conf.json
 
-      - name: 📦 Générer l'installateur Global (Inno Setup)
-        uses: gautamkrishnar/keepalive-workflow@v1 # Ou action d'appel Inno Setup CLI
+      - name: 🛠️ Installer Inno Setup pour générer le .exe final
         run: |
-          echo "Préparation du package d'installation global pour l'école..."
+          choco install innosetup -y
+
+      - name: 📦 Générer l'installateur Global Inno Setup
+        run: |
+          iscc installer/classnet_setup.iss
+
+      - name: 🚀 Publier l'artefact de l'installateur
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassNet-Suite-Setup
+          path: installer/ClassNet_Suite_Setup_v1.3.0.exe
