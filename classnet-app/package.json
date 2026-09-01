@@ -1,15 +1,13 @@
 {
   "name": "classnet-app",
-  "version": "1.3.0",
   "private": true,
+  "version": "1.3.0",
+  "type": "module",
   "scripts": {
-    "build": "echo 'Préparation des assets web ClassNet App...'"
-  },
-  "dependencies": {
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/android": "^6.0.0"
+    "dev": "tauri dev",
+    "build": "tauri build"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0"
+    "@tauri-apps/cli": "^2.0.0"
   }
 }
