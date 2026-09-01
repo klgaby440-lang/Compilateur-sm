@@ -1,11 +1,12 @@
-name: ClassNet Production Build
+name: ClassNet Production Build (Nuitka + Tauri + Inno Setup)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
-  build-windows-ecosystem:
+  build-ecosystem:
     runs-on: windows-latest
 
     steps:
@@ -18,17 +19,29 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: 📦 Installer les dépendances du serveur Intranet
+      - name: 📦 Installer les dépendances Python du serveur Intranet
         run: |
           python -m pip install --upgrade pip
           pip install -r intranet-server/requirements.txt
+          pip install nuitka zstandard
 
       - name: ⚡ Compiler le serveur Intranet avec Nuitka
         run: |
           cd intranet-server
-          python -m nuitka --standalone --mingw64 --include-package=fastapi --include-package=uvicorn --include-package=pydantic --output-dir=dist_nuitka server_intranet.py
+          python -m nuitka --standalone `
+            --windows-console-mode=attach `
+            --assume-yes-for-downloads `
+            --include-package=fastapi `
+            --include-package=uvicorn `
+            --include-package=pydantic `
+            --company-name="CRYPT Enterprise" `
+            --product-name="ClassNet Intranet Node" `
+            --file-version=1.0.0.0 `
+            --product-version=1.0.0.0 `
+            --output-dir="dist_nuitka" server_intranet.py
+        shell: powershell
 
-      - name: 🟢 Installer Node.js
+      - name: 🟢 Configurer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -41,16 +54,18 @@ jobs:
           projectPath: classnet-p
           configPath: src-tauri/tauri.conf.json
 
-      - name: 🛠️ Installer Inno Setup pour générer le .exe final
+      - name: 🛠️ Installer Inno Setup
         run: |
           choco install innosetup -y
+        shell: powershell
 
-      - name: 📦 Générer l'installateur Global Inno Setup
+      - name: 📦 Générer l'installateur Global ClassNet (.exe)
         run: |
-          iscc installer/classnet_setup.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_setup.iss
+        shell: powershell
 
-      - name: 🚀 Publier l'artefact de l'installateur
+      - name: 🚀 Publier l'artefact d'installation
         uses: actions/upload-artifact@v4
         with:
-          name: ClassNet-Suite-Setup
-          path: installer/ClassNet_Suite_Setup_v1.3.0.exe
+          name: ClassNet-Suite-Setup-Windows
+          path: installer/Output/ClassNet_Suite_Setup_v1.3.0.exe
