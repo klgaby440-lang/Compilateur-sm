@@ -33,11 +33,14 @@ jobs:
       # ==========================================
       # 1. COMPILATION CLASSNET APP (MOBILE ANDROID)
       # ==========================================
-      - name: 📱 Compiler ClassNet App (APK Android via Capacitor)
+      - name: 📱 Initialiser et compiler ClassNet App (APK Android)
         run: |
           cd classnet-app
           npm install
           npm run build
+          if (-not (Test-Path -Path "android")) {
+            npx cap add android
+          }
           npx cap sync android
           cd android
           .\gradlew.bat assembleDebug
@@ -52,7 +55,7 @@ jobs:
       # ==========================================
       # 2. COMPILATION SERVEUR INTRANET LOCAL (NUITKA)
       # ==========================================
-      - name: 📦 Installer et mettre à jour les dépendances Python
+      - name: 📦 Installer les dépendances Python du serveur
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade nuitka zstandard
