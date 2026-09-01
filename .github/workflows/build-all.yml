@@ -1,4 +1,4 @@
-name: ClassNet Full Ecosystem Build (Tauri Suite Fast Build)
+name: ClassNet Full Ecosystem Build (Custom Icons)
 
 on:
   push:
@@ -17,29 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # ==========================================
-      # GENERATION AUTOMATIQUE DES ICO/PNG
-      # ==========================================
-      - name: 🎨 Générer les icônes de secours pour ClassNet P et App
-        run: |
-          $iconBase64 = "AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAAAAA=="
-          $bytes = [System.Convert]::FromBase64String($iconBase64)
-          
-          # Dossiers icônes
-          New-Item -ItemType Directory -Force -Path "classnet-p/src-tauri/icons"
-          New-Item -ItemType Directory -Force -Path "classnet-app/src-tauri/icons"
-          
-          # Écriture des fichiers icon.ico
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.ico", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.ico", $bytes)
-          
-          # Écriture de secours des PNG
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/32x32.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/32x32.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/128x128.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/128x128.png", $bytes)
-        shell: powershell
 
       # ==========================================
       # 1. COMPILATION CLASSNET P (DESKTOP TAURI)
