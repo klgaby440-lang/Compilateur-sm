@@ -42,6 +42,12 @@ jobs:
       # ==========================================
       # 2. COMPILATION CLASSNET P (DESKTOP TAURI)
       # ==========================================
+      - name: 📦 Installer les dépendances ClassNet P
+        run: |
+          cd classnet-p
+          npm install
+        shell: powershell
+
       - name: 💻 Compiler ClassNet P (Tauri Administration)
         uses: tauri-apps/tauri-action@v0
         env:
@@ -52,6 +58,12 @@ jobs:
       # ==========================================
       # 3. COMPILATION CLASSNET APP (DESKTOP TAURI)
       # ==========================================
+      - name: 📦 Installer les dépendances ClassNet App
+        run: |
+          cd classnet-app
+          npm install
+        shell: powershell
+
       - name: 📱 Compiler ClassNet App (Tauri Enseignant)
         uses: tauri-apps/tauri-action@v0
         env:
