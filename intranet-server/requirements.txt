@@ -1,3 +1,5 @@
-- FastAPI
-- Uvicorn
-- Pydantic
+fastapi==0.110.0
+uvicorn==0.28.0
+pydantic==2.6.4
+nuitka==2.1.6
+zstandard==0.22.0
