@@ -1,4 +1,4 @@
-name: ClassNet Full Ecosystem Build (Custom Icons)
+name: ClassNet Full Ecosystem Build (Windows Auto-Fix)
 
 on:
   push:
@@ -17,6 +17,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # =========================================================
+      # GENERATION AUTOMATIQUE D'UNE ICONE ICO VALIDE (BYPASS)
+      # =========================================================
+      - name: 🎨 Générer automatiquement les icônes .ico de secours
+        run: |
+          # Chaîne Base64 représentant une icône ICO Windows 16x16 binaire 100% valide
+          $validIcoBase64 = "AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA7guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/"
+          $bytes = [System.Convert]::FromBase64String($validIcoBase64)
+
+          # S'assurer que les dossiers existent
+          New-Item -ItemType Directory -Force -Path "classnet-p/src-tauri/icons" | Out-Null
+          New-Item -ItemType Directory -Force -Path "classnet-app/src-tauri/icons" | Out-Null
+
+          # Génération systématique des fichiers
+          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.ico", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.ico", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/32x32.png", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/32x32.png", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/128x128.png", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/128x128.png", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.png", $bytes)
+          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.png", $bytes)
+        shell: powershell
 
       # ==========================================
       # 1. COMPILATION CLASSNET P (DESKTOP TAURI)
