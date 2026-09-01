@@ -48,7 +48,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: classnet-p
-          configPath: src-tauri/tauri.conf.json
 
       # ==========================================
       # 3. COMPILATION CLASSNET APP (DESKTOP TAURI)
@@ -59,7 +58,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: classnet-app
-          configPath: src-tauri/tauri.conf.json
 
       # ==========================================
       # 4. PACKAGING GLOBAL (INNO SETUP)
