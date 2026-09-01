@@ -1,4 +1,4 @@
-name: ClassNet Full Ecosystem Build (Desktop + Mobile APK + Intranet)
+name: ClassNet Full Ecosystem Build (Tauri Suite + Intranet Node)
 
 on:
   push:
@@ -6,18 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-all-ecosystem:
+  build-full-tauri-suite:
     runs-on: windows-latest
 
     steps:
       - name: 📥 Cloner le dépôt
         uses: actions/checkout@v4
-
-      - name: ☕ Configurer Java JDK 17 (Requis pour l'APK ClassNet App)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
 
       - name: 🐍 Configurer Python 3.11
         uses: actions/setup-python@v5
@@ -31,29 +25,7 @@ jobs:
           node-version: '20'
 
       # ==========================================
-      # 1. COMPILATION CLASSNET APP (MOBILE ANDROID)
-      # ==========================================
-      - name: 📱 Initialiser et compiler ClassNet App (APK Android)
-        run: |
-          cd classnet-app
-          npm install
-          npm run build
-          if (-not (Test-Path -Path "android")) {
-            npx cap add android
-          }
-          npx cap sync android
-          cd android
-          .\gradlew.bat assembleDebug
-        shell: powershell
-
-      - name: 🚀 Publier l'APK Mobile (ClassNet App pour Prof Kitoko)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ClassNet-App-Kitoko-Preview-APK
-          path: classnet-app/android/app/build/outputs/apk/debug/app-debug.apk
-
-      # ==========================================
-      # 2. COMPILATION SERVEUR INTRANET LOCAL (NUITKA)
+      # 1. COMPILATION SERVEUR INTRANET (NUITKA)
       # ==========================================
       - name: 📦 Installer les dépendances Python du serveur
         run: |
@@ -68,14 +40,25 @@ jobs:
         shell: powershell
 
       # ==========================================
-      # 3. COMPILATION CLASSNET P (DESKTOP TAURI)
+      # 2. COMPILATION CLASSNET P (DESKTOP TAURI)
       # ==========================================
-      - name: 💻 Compiler ClassNet P (Tauri Desktop)
+      - name: 💻 Compiler ClassNet P (Tauri Administration)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: classnet-p
+          configPath: src-tauri/tauri.conf.json
+
+      # ==========================================
+      # 3. COMPILATION CLASSNET APP (DESKTOP TAURI)
+      # ==========================================
+      - name: 📱 Compiler ClassNet App (Tauri Enseignant)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: classnet-app
           configPath: src-tauri/tauri.conf.json
 
       # ==========================================
@@ -91,7 +74,7 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_setup.iss
         shell: powershell
 
-      - name: 🚀 Publier l'installateur Windows Desktop
+      - name: 🚀 Publier l'installateur Windows Desktop Final
         uses: actions/upload-artifact@v4
         with:
           name: ClassNet-Suite-Setup-Windows
