@@ -1,4 +1,4 @@
-name: ClassNet Production Build (Nuitka + Tauri + Inno Setup)
+name: ClassNet Full Ecosystem Build (Desktop + Mobile APK + Intranet)
 
 on:
   push:
@@ -6,12 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ecosystem:
+  build-all-ecosystem:
     runs-on: windows-latest
 
     steps:
       - name: 📥 Cloner le dépôt
         uses: actions/checkout@v4
+
+      - name: ☕ Configurer Java JDK 17 (Requis pour l'APK ClassNet App)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: 🐍 Configurer Python 3.11
         uses: actions/setup-python@v5
@@ -19,34 +25,49 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: 📦 Installer les dépendances Python du serveur Intranet
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r intranet-server/requirements.txt
-          pip install nuitka zstandard
-
-      - name: ⚡ Compiler le serveur Intranet avec Nuitka
-        run: |
-          cd intranet-server
-          python -m nuitka --standalone `
-            --windows-console-mode=attach `
-            --assume-yes-for-downloads `
-            --include-package=fastapi `
-            --include-package=uvicorn `
-            --include-package=pydantic `
-            --company-name="CRYPT Enterprise" `
-            --product-name="ClassNet Intranet Node" `
-            --file-version=1.0.0.0 `
-            --product-version=1.0.0.0 `
-            --output-dir="dist_nuitka" server_intranet.py
-        shell: powershell
-
-      - name: 🟢 Configurer Node.js
+      - name: 🟢 Configurer Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 💻 Compiler ClassNet P (Tauri)
+      # ==========================================
+      # 1. COMPILATION CLASSNET APP (MOBILE ANDROID)
+      # ==========================================
+      - name: 📱 Compiler ClassNet App (APK Android via Capacitor)
+        run: |
+          cd classnet-app
+          npm install
+          npm run build
+          npx cap sync android
+          cd android
+          .\gradlew.bat assembleDebug
+        shell: powershell
+
+      - name: 🚀 Publier l'APK Mobile (ClassNet App pour Prof Kitoko)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassNet-App-Kitoko-Preview-APK
+          path: classnet-app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      # ==========================================
+      # 2. COMPILATION SERVEUR INTRANET LOCAL (NUITKA)
+      # ==========================================
+      - name: 📦 Installer et mettre à jour les dépendances Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade nuitka zstandard
+          pip install -r intranet-server/requirements.txt
+
+      - name: ⚡ Compiler le serveur Intranet avec Nuitka
+        run: |
+          cd intranet-server
+          python -m nuitka --standalone --assume-yes-for-downloads --include-package=fastapi --include-package=uvicorn --include-package=pydantic --company-name="CRYPT Enterprise" --product-name="ClassNet Intranet Node" --file-version=1.0.0.0 --product-version=1.0.0.0 --output-dir="dist_nuitka" server_intranet.py
+        shell: powershell
+
+      # ==========================================
+      # 3. COMPILATION CLASSNET P (DESKTOP TAURI)
+      # ==========================================
+      - name: 💻 Compiler ClassNet P (Tauri Desktop)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -54,17 +75,20 @@ jobs:
           projectPath: classnet-p
           configPath: src-tauri/tauri.conf.json
 
+      # ==========================================
+      # 4. PACKAGING GLOBAL (INNO SETUP)
+      # ==========================================
       - name: 🛠️ Installer Inno Setup
         run: |
           choco install innosetup -y
         shell: powershell
 
-      - name: 📦 Générer l'installateur Global ClassNet (.exe)
+      - name: 📦 Générer l'installateur Windows ClassNet (.exe)
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_setup.iss
         shell: powershell
 
-      - name: 🚀 Publier l'artefact d'installation
+      - name: 🚀 Publier l'installateur Windows Desktop
         uses: actions/upload-artifact@v4
         with:
           name: ClassNet-Suite-Setup-Windows
