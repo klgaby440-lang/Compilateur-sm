@@ -1,4 +1,4 @@
-name: ClassNet Full Ecosystem Build (Windows Auto-Fix)
+name: ClassNet Master Production Ecosystem Build
 
 on:
   push:
@@ -6,32 +6,43 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-full-tauri-suite:
+  build-full-ecosystem:
     runs-on: windows-latest
 
     steps:
       - name: 📥 Cloner le dépôt
         uses: actions/checkout@v4
 
+      # =========================================================
+      # 1. CONFIGURATION DES ENVIRONNEMENTS (Python, Node, Rust)
+      # =========================================================
+      - name: 🐍 Configurer Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
       - name: 🟢 Configurer Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      - name: 🦀 Configurer la chaîne de compilation Rust
+        uses: dtolnay/rust-toolchain@stable
+
       # =========================================================
-      # GENERATION AUTOMATIQUE D'UNE ICONE ICO VALIDE (BYPASS)
+      # 2. GENERATION AUTOMATIQUE DES ICO/PNG (BYPASS ICONS)
       # =========================================================
-      - name: 🎨 Générer automatiquement les icônes .ico de secours
+      - name: 🎨 Générer automatiquement les icônes .ico et .png de secours
         run: |
-          # Chaîne Base64 représentant une icône ICO Windows 16x16 binaire 100% valide
-          $validIcoBase64 = "AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA7guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/"
+          $validIcoBase64 = "AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA7guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/"
           $bytes = [System.Convert]::FromBase64String($validIcoBase64)
 
           # S'assurer que les dossiers existent
           New-Item -ItemType Directory -Force -Path "classnet-p/src-tauri/icons" | Out-Null
           New-Item -ItemType Directory -Force -Path "classnet-app/src-tauri/icons" | Out-Null
 
-          # Génération systématique des fichiers
+          # Génération systématique des fichiers d'icônes
           [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.ico", $bytes)
           [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.ico", $bytes)
           [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/32x32.png", $bytes)
@@ -42,9 +53,35 @@ jobs:
           [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.png", $bytes)
         shell: powershell
 
-      # ==========================================
-      # 1. COMPILATION CLASSNET P (DESKTOP TAURI)
-      # ==========================================
+      # =========================================================
+      # 3. COMPILATION DU SERVEUR INTRANET (PYTHON NUITKA)
+      # =========================================================
+      - name: 📦 Installer les dépendances Python du serveur Intranet
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r intranet-server/requirements.txt
+          pip install nuitka zstandard
+        shell: powershell
+
+      - name: ⚡ Compiler le serveur Intranet avec Nuitka
+        run: |
+          cd intranet-server
+          python -m nuitka --standalone `
+            --windows-console-mode=attach `
+            --assume-yes-for-downloads `
+            --include-package=fastapi `
+            --include-package=uvicorn `
+            --include-package=pydantic `
+            --company-name="CRYPT Enterprise" `
+            --product-name="ClassNet Intranet Node" `
+            --file-version=1.2.0.0 `
+            --product-version=1.2.0.0 `
+            --output-dir="dist_nuitka" server_intranet.py
+        shell: powershell
+
+      # =========================================================
+      # 4. COMPILATION CLASSNET P (DESKTOP TAURI ADMIN)
+      # =========================================================
       - name: 📦 Installer les dépendances ClassNet P
         run: |
           cd classnet-p
@@ -57,10 +94,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: classnet-p
+          configPath: classnet-p/src-tauri/tauri.conf.json
 
-      # ==========================================
-      # 2. COMPILATION CLASSNET APP (DESKTOP TAURI)
-      # ==========================================
+      # =========================================================
+      # 5. COMPILATION CLASSNET APP (DESKTOP TAURI ENSEIGNANT)
+      # =========================================================
       - name: 📦 Installer les dépendances ClassNet App
         run: |
           cd classnet-app
@@ -73,10 +111,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: classnet-app
+          configPath: classnet-app/src-tauri/tauri.conf.json
 
-      # ==========================================
-      # 3. PACKAGING GLOBAL (INNO SETUP)
-      # ==========================================
+      # =========================================================
+      # 6. PACKAGING GLOBAL (INNO SETUP)
+      # =========================================================
       - name: 🛠️ Installer Inno Setup
         run: |
           choco install innosetup -y
