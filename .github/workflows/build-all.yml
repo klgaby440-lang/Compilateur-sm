@@ -28,28 +28,7 @@ jobs:
 
       - name: 🦀 Configurer la chaîne de compilation Rust
         uses: dtolnay/rust-toolchain@stable
-
-      # =========================================================
-      # 2. GENERATION AUTOMATIQUE DES ICO/PNG DE SECOURS
-      # =========================================================
-      - name: 🎨 Générer automatiquement les icônes .ico et .png
-        run: |
-          $validIcoBase64 = "AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA7guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P87guz/O4Ls/zuC7P/O4Ls/zuC7P87guz/"
-          $bytes = [System.Convert]::FromBase64String($validIcoBase64)
-
-          New-Item -ItemType Directory -Force -Path "classnet-p/src-tauri/icons" | Out-Null
-          New-Item -ItemType Directory -Force -Path "classnet-app/src-tauri/icons" | Out-Null
-
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.ico", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.ico", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/32x32.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/32x32.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/128x128.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/128x128.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-p/src-tauri/icons/icon.png", $bytes)
-          [System.IO.File]::WriteAllBytes("classnet-app/src-tauri/icons/icon.png", $bytes)
-        shell: powershell
-
+        
       # =========================================================
       # 3. COMPILATION DU SERVEUR INTRANET (NUITKA STABLE)
       # =========================================================
