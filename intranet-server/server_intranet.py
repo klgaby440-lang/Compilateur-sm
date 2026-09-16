@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 
-intranet_app = FastAPI(title="ClassNet Intranet Node", version="1.0.0")
+app = FastAPI(title="ClassNet Intranet Node", version="1.0.0")
 
 intranet_app.add_middleware(
     CORSMiddleware,
