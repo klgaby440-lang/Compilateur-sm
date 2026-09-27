@@ -7,7 +7,7 @@ on:
 
 jobs:
   # =========================================================
-  # JOB 1 : COMPILATION COMPLÈTE ECOSYSTÈME WINDOWS (DESKTOP)
+  # JOB 1 : COMPILATION COMPLÈTE ÉCOSYSTÈME WINDOWS (DESKTOP)
   # =========================================================
   build-windows-ecosystem:
     runs-on: windows-latest
@@ -81,22 +81,35 @@ jobs:
         with:
           projectPath: classnet-app
 
-      # 5. PACKAGING GLOBAL (INNO SETUP)
+      # 5. PACKAGING SÉPARÉ (INNO SETUP)
       - name: 🛠️ Installer Inno Setup
         run: |
           choco install innosetup -y
         shell: powershell
 
-      - name: 📦 Générer l'installateur Windows ClassNet (.exe)
+      - name: 📦 Générer l'installeur Windows ClassNet App (.exe)
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_setup.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_app_setup.iss
         shell: powershell
 
-      - name: 🚀 Publier l'installateur Windows Desktop Final (Brut)
+      - name: 📦 Générer l'installeur Windows ClassNet P (.exe)
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_p_setup.iss
+        shell: powershell
+
+      # 6. UPLOAD DES ARTEFACTS SÉPARÉS
+      - name: 🚀 Publier l'installeur ClassNet App
         uses: actions/upload-artifact@v4
         with:
-          name: ClassNet-Suite-Setup-Windows.exe
-          path: installer/Output/ClassNet_Suite_Setup_v1.3.0.exe
+          name: ClassNet-App-Setup-Windows.exe
+          path: installer/Output/ClassNet_App_Setup_v1.3.0.exe
+          compression-level: 0
+
+      - name: 🚀 Publier l'installeur ClassNet P
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassNet-P-Setup-Windows.exe
+          path: installer/Output/ClassNet_P_Setup_v1.3.0.exe
           compression-level: 0
 
   # =========================================================
@@ -129,18 +142,29 @@ jobs:
           fi
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
 
-      # 2. GARANTIE DU MODE 100% HORS-LIGNE
+      # 2. GARANTIE DU MODE 100% HORS-LIGNE (AVEC JSPDF, AUTOTABLE & MARKED)
       - name: 🌐 Téléchargement des dépendances CDN pour le mode hors-ligne
         run: |
           cd classnet-app/src
           mkdir -p offline-assets
+          
+          # Téléchargement des scripts de base
           wget -qO offline-assets/tailwindcss.js https://cdn.tailwindcss.com || true
           wget -qO offline-assets/lucide.js https://unpkg.com/lucide@latest || true
           wget -qO offline-assets/dexie.js https://unpkg.com/dexie/dist/dexie.js || true
           
+          # Téléchargement de jsPDF, AutoTable et Marked
+          wget -qO offline-assets/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js || true
+          wget -qO offline-assets/jspdf.plugin.autotable.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js || true
+          wget -qO offline-assets/marked.min.js https://cdn.jsdelivr.net/npm/marked/marked.min.js || true
+
+          # Remplacement automatique des liens CDN par les fichiers locaux
           find . -name "*.html" -exec sed -i 's|https://cdn.tailwindcss.com|./offline-assets/tailwindcss.js|g' {} +
           find . -name "*.html" -exec sed -i 's|https://unpkg.com/lucide@latest|./offline-assets/lucide.js|g' {} +
           find . -name "*.html" -exec sed -i 's|https://unpkg.com/dexie/dist/dexie.js|./offline-assets/dexie.js|g' {} +
+          find . -name "*.html" -exec sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js|./offline-assets/jspdf.umd.min.js|g' {} +
+          find . -name "*.html" -exec sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js|./offline-assets/jspdf.plugin.autotable.min.js|g' {} +
+          find . -name "*.html" -exec sed -i 's|https://cdn.jsdelivr.net/npm/marked/marked.min.js|./offline-assets/marked.min.js|g' {} +
 
       # 3. SYNCHRONISATION ANDROID
       - name: 📱 Initialiser et Synchroniser le projet Android
@@ -163,10 +187,15 @@ jobs:
 
       # 5. UPLOAD ARTEFACT NON COMPRESSÉ
       - name: 🚀 Mise à disposition du fichier APK (Brut)
+        run: |
+          mkdir -p release-apk
+          cp ./classnet-app/android/app/build/outputs/apk/debug/app-debug.apk ./release-apk/Class-Ink-Enseignant.apk
+
+      - name: 🚀 Publier l'APK
         uses: actions/upload-artifact@v4
         with:
           name: Class-Ink-Enseignant.apk
-          path: ./classnet-app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: ./release-apk/Class-Ink-Enseignant.apk
           compression-level: 0
 
   # =========================================================
@@ -179,10 +208,16 @@ jobs:
       contents: write
 
     steps:
-      - name: 📥 Télécharger l'installateur Windows
+      - name: 📥 Télécharger l'installeur ClassNet App
         uses: actions/download-artifact@v4
         with:
-          name: ClassNet-Suite-Setup-Windows.exe
+          name: ClassNet-App-Setup-Windows.exe
+          path: ./release-assets
+
+      - name: 📥 Télécharger l'installeur ClassNet P
+        uses: actions/download-artifact@v4
+        with:
+          name: ClassNet-P-Setup-Windows.exe
           path: ./release-assets
 
       - name: 📥 Télécharger l'APK Android
@@ -191,11 +226,7 @@ jobs:
           name: Class-Ink-Enseignant.apk
           path: ./release-assets
 
-      - name: 🛠️ Renommer l'APK pour un nom explicite
-        run: |
-          mv ./release-assets/app-debug.apk ./release-assets/Class-Ink-Enseignant.apk || true
-
-      - name: 🚀 Publier la Release GitHub
+      - name: 🚀 Publier la Release GitHub Complète
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -205,5 +236,6 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./release-assets/ClassNet_Suite_Setup_v1.3.0.exe
+            ./release-assets/ClassNet_App_Setup_v1.3.0.exe
+            ./release-assets/ClassNet_P_Setup_v1.3.0.exe
             ./release-assets/Class-Ink-Enseignant.apk
