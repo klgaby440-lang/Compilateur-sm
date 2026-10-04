@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Class-Ink",
+  "productName": "ClassNet App",
   "version": "2.1.30245",
   "identifier": "com.crypt.classnetapp",
   "build": {
@@ -15,7 +15,7 @@
     },
     "windows": [
       {
-        "title": "Class-Ink",
+        "title": "ClassNet App",
         "width": 1280,
         "height": 800,
         "resizable": true,
