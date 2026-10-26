@@ -1,47 +1,43 @@
-name: ClassNet & Class-Ink Master Unified Production Ecosystem Build
+name: PrimeInk, Class-Ink et serveur intranet — builds Windows séparés
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   workflow_dispatch:
 
-jobs:
-  # =========================================================
-  # JOB 1 : COMPILATION COMPLÈTE ÉCOSYSTÈME WINDOWS (DESKTOP)
-  # =========================================================
-  build-windows-ecosystem:
-    runs-on: windows-latest
+permissions:
+  contents: read
 
+jobs:
+  # 1. Serveur Intranet compilé avec Nuitka. L'artefact est un ZIP de
+  #    toute la distribution standalone (EXE + bibliothèques nécessaires).
+  build-intranet-server:
+    name: Compiler le serveur intranet
+    runs-on: windows-latest
     steps:
-      - name: 📥 Cloner le dépôt
+      - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
-      # 1. CONFIGURATION DES ENVIRONNEMENTS
-      - name: 🐍 Configurer Python 3.11
+      - name: Installer Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: intranet-server/requirements.txt
 
-      - name: 🟢 Configurer Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 🦀 Configurer la chaîne de compilation Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      # 2. COMPILATION DU SERVEUR INTRANET (NUITKA)
-      - name: 📦 Installation des dépendances Python sans cache
+      - name: Installer les dépendances Python et Nuitka
+        shell: pwsh
         run: |
-          python -m pip install --no-cache-dir --upgrade pip setuptools wheel
-          python -m pip install --no-cache-dir --upgrade nuitka zstandard
-          python -m pip install --no-cache-dir -r intranet-server/requirements.txt
-        shell: powershell
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade nuitka zstandard
+          python -m pip install -r intranet-server/requirements.txt
 
-      - name: ⚡ Compiler le serveur Intranet avec Nuitka
+      - name: Compiler le serveur Intranet
+        shell: pwsh
         run: |
-          cd intranet-server
-          python -m nuitka --standalone `
+          Set-Location intranet-server
+          python -m nuitka `
+            --standalone `
             --assume-yes-for-downloads `
             --include-package=fastapi `
             --include-package=uvicorn `
@@ -50,192 +46,190 @@ jobs:
             --product-name="ClassNet Intranet Node" `
             --file-version=1.0.0.0 `
             --product-version=1.0.0.0 `
-            --output-dir="dist_nuitka" server_intranet.py
-        shell: powershell
+            --output-dir="dist_nuitka" `
+            server_intranet.py
 
-      # 3. COMPILATION PRIMENET / CLASSNET P (TAURI ADMIN)
-      - name: 📦 Installer les dépendances PrimeNet (ClassNet P)
-        run: |
-          cd classnet-p
-          npm install
-        shell: powershell
+          $dist = Join-Path (Get-Location) "dist_nuitka/server_intranet.dist"
+          if (-not (Test-Path (Join-Path $dist "server_intranet.exe"))) {
+            throw "Compilation Nuitka terminée, mais server_intranet.exe est introuvable dans $dist"
+          }
 
-      - name: 💻 Compiler PrimeNet / ClassNet P (Tauri Administration)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: classnet-p
+          $zip = Join-Path $env:RUNNER_TEMP "ClassNet-Intranet-Server-Windows.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path $dist -DestinationPath $zip -CompressionLevel Optimal
+          Write-Host "Serveur compilé et empaqueté : $zip"
 
-      # 4. COMPILATION CLASSNET APP / CLASS-INK APP (TAURI ENSEIGNANT)
-      - name: 📦 Installer les dépendances ClassNet App
-        run: |
-          cd classnet-app
-          npm install
-        shell: powershell
-
-      - name: 📱 Compiler ClassNet App (Tauri Enseignant/Élève)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: classnet-app
-
-      # 5. PACKAGING SÉPARÉ (INNO SETUP)
-      - name: 🛠️ Installer Inno Setup
-        run: |
-          choco install innosetup -y
-        shell: powershell
-
-      - name: 📦 Générer l'installeur Windows ClassNet App (.exe)
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_app_setup.iss
-        shell: powershell
-
-      - name: 📦 Générer l'installeur Windows ClassNet P (.exe)
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/classnet_p_setup.iss
-        shell: powershell
-
-      # 6. UPLOAD DES ARTEFACTS SÉPARÉS
-      - name: 🚀 Publier l'installeur ClassNet App
+      - name: Publier l'artefact du serveur (ZIP)
         uses: actions/upload-artifact@v4
         with:
-          name: ClassNet-App-Setup-Windows.exe
-          path: installer/Output/ClassNet_App_Setup_v1.3.0.exe
+          name: ClassNet-Intranet-Server-Windows
+          path: ${{ runner.temp }}/ClassNet-Intranet-Server-Windows.zip
+          if-no-files-found: error
           compression-level: 0
+          retention-days: 30
 
-      - name: 🚀 Publier l'installeur ClassNet P
-        uses: actions/upload-artifact@v4
-        with:
-          name: ClassNet-P-Setup-Windows.exe
-          path: installer/Output/ClassNet_P_Setup_v1.3.0.exe
-          compression-level: 0
-
-  # =========================================================
-  # JOB 2 : COMPILATION APPLICATION MOBILE ANDROID (CAPACITOR APK)
-  # =========================================================
-  build-android-apk:
-    runs-on: ubuntu-latest
-
+  # 2. PrimeInk / ClassNet P — son propre setup Inno Setup.
+  build-primeink:
+    name: Générer le setup PrimeInk
+    runs-on: windows-latest
+    needs: build-intranet-server
     steps:
-      - name: 📥 Récupération du code source
+      - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
-      - name: 🟢 Configuration de Node.js 22
+      - name: Préparer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "20"
 
-      - name: ☕ Configuration du JDK Java 21 (Requis pour Capacitor / Android)
-        uses: actions/setup-java@v4
+      - name: Installer Rust stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          targets: x86_64-pc-windows-msvc
 
-      # 1. PRÉPARATION ET CAPACITOR
-      - name: 🛠️ Installation et Configuration de Capacitor
+      - name: Télécharger le serveur compilé pour le packaging
+        uses: actions/download-artifact@v4
+        with:
+          name: ClassNet-Intranet-Server-Windows
+          path: ${{ runner.temp }}/intranet-server-artifact
+
+      - name: Préparer la distribution du serveur dans le dépôt
+        shell: pwsh
         run: |
-          cd classnet-app
-          if [ ! -f package.json ]; then
-            npm init -y
-          fi
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          $destination = Join-Path $env:GITHUB_WORKSPACE "intranet-server/dist_nuitka"
+          $expectedBundle = Join-Path $destination "server_intranet.dist"
+          $zip = Join-Path $env:RUNNER_TEMP "intranet-server-artifact/ClassNet-Intranet-Server-Windows.zip"
+          $staging = Join-Path $env:RUNNER_TEMP "intranet-expanded"
+          if (-not (Test-Path $zip)) { throw "Artefact serveur absent : $zip" }
+          if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging -Force | Out-Null
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          Expand-Archive -Path $zip -DestinationPath $staging -Force
+          $serverExe = Get-ChildItem -Path $staging -Filter "server_intranet.exe" -Recurse | Select-Object -First 1
+          if (-not $serverExe) { throw "server_intranet.exe introuvable dans l'artefact serveur" }
+          if (Test-Path $expectedBundle) { Remove-Item $expectedBundle -Recurse -Force }
+          New-Item -ItemType Directory -Path $expectedBundle -Force | Out-Null
+          Copy-Item -Path (Join-Path $serverExe.DirectoryName "*") -Destination $expectedBundle -Recurse -Force
+          if (-not (Test-Path (Join-Path $expectedBundle "server_intranet.exe"))) {
+            throw "Impossible de reconstruire la distribution standalone du serveur"
+          }
 
-      # 2. GARANTIE DU MODE 100% HORS-LIGNE (AVEC JSPDF, AUTOTABLE & MARKED)
-      - name: 🌐 Téléchargement des dépendances CDN pour le mode hors-ligne
+      - name: Installer les dépendances PrimeInk
+        shell: pwsh
         run: |
-          cd classnet-app/src
-          mkdir -p offline-assets
-          
-          # Téléchargement des scripts de base
-          wget -qO offline-assets/tailwindcss.js https://cdn.tailwindcss.com || true
-          wget -qO offline-assets/lucide.js https://unpkg.com/lucide@latest || true
-          wget -qO offline-assets/dexie.js https://unpkg.com/dexie/dist/dexie.js || true
-          
-          # Téléchargement de jsPDF, AutoTable et Marked
-          wget -qO offline-assets/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js || true
-          wget -qO offline-assets/jspdf.plugin.autotable.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js || true
-          wget -qO offline-assets/marked.min.js https://cdn.jsdelivr.net/npm/marked/marked.min.js || true
+          Set-Location classnet-p
+          npm install --no-audit --no-fund
 
-          # Remplacement automatique des liens CDN par les fichiers locaux
-          find . -name "*.html" -exec sed -i 's|https://cdn.tailwindcss.com|./offline-assets/tailwindcss.js|g' {} +
-          find . -name "*.html" -exec sed -i 's|https://unpkg.com/lucide@latest|./offline-assets/lucide.js|g' {} +
-          find . -name "*.html" -exec sed -i 's|https://unpkg.com/dexie/dist/dexie.js|./offline-assets/dexie.js|g' {} +
-          find . -name "*.html" -exec sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js|./offline-assets/jspdf.umd.min.js|g' {} +
-          find . -name "*.html" -exec sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js|./offline-assets/jspdf.plugin.autotable.min.js|g' {} +
-          find . -name "*.html" -exec sed -i 's|https://cdn.jsdelivr.net/npm/marked/marked.min.js|./offline-assets/marked.min.js|g' {} +
-
-      # 3. SYNCHRONISATION ANDROID
-      - name: 📱 Initialiser et Synchroniser le projet Android
+      - name: Compiler PrimeInk avec Tauri (sans créer de Release GitHub)
+        shell: pwsh
         run: |
-          cd classnet-app
-          if [ ! -f capacitor.config.json ]; then
-            npx cap init "Class-Ink App" "com.crypt.classink.app" --web-dir src
-          fi
-          if [ ! -d android ]; then
-            npx cap add android
-          fi
-          npx cap sync android
+          Set-Location classnet-p
+          npx tauri build
 
-      # 4. COMPILATION APK
-      - name: 📦 Compilation de l'APK Android avec Gradle
+      - name: Installer Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Générer le setup PrimeInk
+        shell: pwsh
         run: |
-          cd classnet-app/android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $outDir = Join-Path $env:GITHUB_WORKSPACE "installer/Output"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe introuvable : $iscc" }
+          if (-not (Test-Path "installer/classnet_p_setup.iss")) { throw "Script installer/classnet_p_setup.iss introuvable" }
+          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+          & $iscc "/O$outDir" "/FPrimeInk_Setup_v1.3.0" "installer/classnet_p_setup.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Échec de compilation Inno Setup pour PrimeInk (code $LASTEXITCODE)" }
+          if (-not (Test-Path (Join-Path $outDir "PrimeInk_Setup_v1.3.0.exe"))) { throw "Setup PrimeInk non généré" }
 
-      # 5. UPLOAD ARTEFACT NON COMPRESSÉ
-      - name: 🚀 Mise à disposition du fichier APK (Brut)
-        run: |
-          mkdir -p release-apk
-          cp ./classnet-app/android/app/build/outputs/apk/debug/app-debug.apk ./release-apk/Class-Ink-Enseignant.apk
-
-      - name: 🚀 Publier l'APK
+      - name: Publier le setup PrimeInk
         uses: actions/upload-artifact@v4
         with:
-          name: Class-Ink-Enseignant.apk
-          path: ./release-apk/Class-Ink-Enseignant.apk
+          name: PrimeInk-Setup-Windows
+          path: installer/Output/PrimeInk_Setup_v1.3.0.exe
+          if-no-files-found: error
           compression-level: 0
+          retention-days: 30
 
-  # =========================================================
-  # JOB 3 : PUBLICATION AUTOMATIQUE DANS LES RELEASES GITHUB
-  # =========================================================
-  publish-release:
-    needs: [build-windows-ecosystem, build-android-apk]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+  # 3. Class-Ink / ClassNet App — son propre setup Inno Setup.
+  build-classink:
+    name: Générer le setup Class-Ink
+    runs-on: windows-latest
+    needs: build-intranet-server
     steps:
-      - name: 📥 Télécharger l'installeur ClassNet App
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Préparer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Télécharger le serveur compilé pour le packaging
         uses: actions/download-artifact@v4
         with:
-          name: ClassNet-App-Setup-Windows.exe
-          path: ./release-assets
+          name: ClassNet-Intranet-Server-Windows
+          path: ${{ runner.temp }}/intranet-server-artifact
 
-      - name: 📥 Télécharger l'installeur ClassNet P
-        uses: actions/download-artifact@v4
-        with:
-          name: ClassNet-P-Setup-Windows.exe
-          path: ./release-assets
+      - name: Préparer la distribution du serveur dans le dépôt
+        shell: pwsh
+        run: |
+          $destination = Join-Path $env:GITHUB_WORKSPACE "intranet-server/dist_nuitka"
+          $expectedBundle = Join-Path $destination "server_intranet.dist"
+          $zip = Join-Path $env:RUNNER_TEMP "intranet-server-artifact/ClassNet-Intranet-Server-Windows.zip"
+          $staging = Join-Path $env:RUNNER_TEMP "intranet-expanded"
+          if (-not (Test-Path $zip)) { throw "Artefact serveur absent : $zip" }
+          if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging -Force | Out-Null
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          Expand-Archive -Path $zip -DestinationPath $staging -Force
+          $serverExe = Get-ChildItem -Path $staging -Filter "server_intranet.exe" -Recurse | Select-Object -First 1
+          if (-not $serverExe) { throw "server_intranet.exe introuvable dans l'artefact serveur" }
+          if (Test-Path $expectedBundle) { Remove-Item $expectedBundle -Recurse -Force }
+          New-Item -ItemType Directory -Path $expectedBundle -Force | Out-Null
+          Copy-Item -Path (Join-Path $serverExe.DirectoryName "*") -Destination $expectedBundle -Recurse -Force
+          if (-not (Test-Path (Join-Path $expectedBundle "server_intranet.exe"))) {
+            throw "Impossible de reconstruire la distribution standalone du serveur"
+          }
 
-      - name: 📥 Télécharger l'APK Android
-        uses: actions/download-artifact@v4
-        with:
-          name: Class-Ink-Enseignant.apk
-          path: ./release-assets
+      - name: Installer les dépendances Class-Ink
+        shell: pwsh
+        run: |
+          Set-Location classnet-app
+          npm install --no-audit --no-fund
 
-      - name: 🚀 Publier la Release GitHub Complète
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compiler Class-Ink avec Tauri (sans créer de Release GitHub)
+        shell: pwsh
+        run: |
+          Set-Location classnet-app
+          npx tauri build
+
+      - name: Installer Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Générer le setup Class-Ink
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $outDir = Join-Path $env:GITHUB_WORKSPACE "installer/Output"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe introuvable : $iscc" }
+          if (-not (Test-Path "installer/classnet_app_setup.iss")) { throw "Script installer/classnet_app_setup.iss introuvable" }
+          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+          & $iscc "/O$outDir" "/FClassInk_Setup_v1.3.0" "installer/classnet_app_setup.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Échec de compilation Inno Setup pour Class-Ink (code $LASTEXITCODE)" }
+          if (-not (Test-Path (Join-Path $outDir "ClassInk_Setup_v1.3.0.exe"))) { throw "Setup Class-Ink non généré" }
+
+      - name: Publier le setup Class-Ink
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: build-v1.3.0-${{ github.run_number }}
-          name: Release ClassNet Suite v1.3.0 (Build #${{ github.run_number }})
-          draft: false
-          prerelease: false
-          files: |
-            ./release-assets/ClassNet_App_Setup_v1.3.0.exe
-            ./release-assets/ClassNet_P_Setup_v1.3.0.exe
-            ./release-assets/Class-Ink-Enseignant.apk
+          name: Class-Ink-Setup-Windows
+          path: installer/Output/ClassInk_Setup_v1.3.0.exe
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
